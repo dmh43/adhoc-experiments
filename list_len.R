@@ -1,0 +1,50 @@
+library(ggplot2)
+library(ggeffects)
+library(gratia)
+library(mgcv)
+df = read.csv('~/Downloads/Result_4.csv')
+df['high_score'] = factor(df['min_score'] >0.99)
+res = gam(click ~ s(avg_score, k=3) + s(list_len, k=5), family=binomial, data=df)
+summary(res)
+plot(ggeffects::ggpredict(res), facet=TRUE)
+
+# group by week sent instead of by alert email
+df = read.csv('~/Downloads/weekly.csv')
+df['high_score'] = factor(df['avg_score'] >0.99)
+df['library_folder_id'] = factor(df$library_folder_id)
+res = gam(click ~ s(avg_score, k=3) + high_score + s(library_folder_id, bs='re') + s(week_list_len, k=5), family=binomial, data=df)
+summary(res)
+plot(ggeffects::ggpredict(res), facet=TRUE)
+
+# limit to a small date range
+df = read.csv('~/Downloads/Result_19.csv')
+df['high_score'] = factor(df['avg_score'] >0.99)
+df['library_folder_id'] = factor(df$library_folder_id)
+res = gam(click ~ s(avg_score, by=high_score, k=5) + s(max_score, k=5) + s(min_score, k=5) + s(library_folder_id, bs='re') + s(list_len, k=8), family=binomial, data=df)
+summary(res)
+plot(ggeffects::ggpredict(res), facet=TRUE)
+gam.check(res)
+plot(res, pages = 1, trans = plogis)
+
+# limit to a small date range and control for num annotations
+df = read.csv('~/Downloads/Result_29.csv')
+df['high_score'] = factor(df['avg_score'] >0.99)
+df['library_folder_id'] = factor(df$library_folder_id)
+df['early'] = factor(df$alert_num <= 3)
+res = gam(click ~ s(avg_score, by=high_score, k=15) + s(num_annotations, k=15) + s(library_folder_id, bs='re') + s(alert_num, k=5) + s(list_len, by=early, k=8), family=binomial, data=df)
+summary(res)
+plot(ggeffects::ggpredict(res), facet=TRUE)
+gam.check(res)
+plot(res, pages = 1, trans = plogis)
+
+#weekly
+# limit to a small date range and control for num annotations
+df = read.csv('~/Downloads/weekly.csv')
+df['high_score'] = factor(df['avg_score'] >0.99)
+df['library_folder_id'] = factor(df$library_folder_id)
+df['early'] = factor(df$week_num <= 3)
+res = gam(click ~ s(avg_score, by=high_score, k=15) + s(num_annotations, k=15) + s(library_folder_id, bs='re') + s(week_num, k=8) + s(week_list_len, by=early, k=8), family=binomial, data=df)
+summary(res)
+plot(ggeffects::ggpredict(res), facet=TRUE)
+gam.check(res)
+plot(res, pages = 1, trans = plogis)
